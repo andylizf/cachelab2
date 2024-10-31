@@ -1,0 +1,15 @@
+.vscode/
+*.o
+main
+demo
+.csim_results
+gemm_traces/
+csim-ref.c
+csim
+handin.tar
+.access_key
+__pycache__
+.overall_results
+.pytest_cache
+.autograder_result
+.last_submit_time

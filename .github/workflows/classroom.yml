@@ -1,0 +1,66 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-24.04
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Checkout reference answer
+      run: |
+        if [ $GITHUB_REPOSITORY = "RUCICS/cachelab2" ]; then
+          curl -o csim.c ${{ secrets.CACHELAB2_CSIM_GIST_URL }} 
+          curl -o gemm.cpp ${{ secrets.CACHELAB2_GEMM_GIST_URL }}
+        fi
+    - name: csim test
+      id: csim-test
+      uses: panjd123/autograding-command-grader@v1
+      with:
+        test-name: csim test
+        setup-command: 
+        command: python3 test/csim_test2.py
+        timeout: 10
+        max-score: 100
+    - name: Check csim answer
+      run: |
+        if [ $GITHUB_REPOSITORY = "RUCICS/cachelab2" ]; then
+          score=$(cat .autograder_result)
+          if (( $(echo "$score == 100" | bc) )); then
+            exit 0
+          else
+            exit 1
+          fi
+        fi
+    - name: gemm test
+      id: gemm-test
+      uses: panjd123/autograding-command-grader@v1
+      with:
+        test-name: gemm test
+        setup-command: 
+        command: python3 test/gemm_test2.py
+        timeout: 10
+        max-score: 100
+    - name: Check gemm answer
+      run: |
+        if [ $GITHUB_REPOSITORY = "RUCICS/cachelab2" ]; then
+          score=$(cat .autograder_result)
+          if (( $(echo "$score >= 100" | bc) )); then
+            exit 0
+          else
+            exit 1
+          fi
+        fi
+    - name: Autograding Reporter
+      uses: panjd123/autograding-grading-reporter@v1
+      env:
+        CSIM-TEST_RESULTS: "${{steps.csim-test.outputs.result}}"
+        GEMM-TEST_RESULTS: "${{steps.gemm-test.outputs.result}}"
+      with:
+        runners: csim-test,gemm-test
